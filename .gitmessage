@@ -1,0 +1,7 @@
+# Configuration:
+# git config commit.template ./.gitmessage
+
+URAPP-XXX XXXXXXXX:
+    - XXXXXXXX.
+    - XXXXXXXX.
+    - XXXXXXXX.

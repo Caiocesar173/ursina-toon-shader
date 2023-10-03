@@ -1,5 +1,3 @@
-SimpleURPToonLitOutlineExample_Shared.shader:
-`
 #pragma once
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -296,4 +294,3 @@ void DepthNormalsFragment(
         outRenderingLayers = float4(EncodeMeshRenderingLayer(renderingLayers), 0, 0, 0);
     #endif
 }
-`

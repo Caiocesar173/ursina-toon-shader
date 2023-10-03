@@ -1,5 +1,3 @@
-SimpleURPToonLitOutlineExample_LightingEquation.shader:
-`
 #pragma once
 
 half3 ShadeGI(ToonSurfaceData surfaceData, ToonLightingData lightingData)
@@ -37,4 +35,3 @@ half3 CompositeAllLightResults(half3 indirectResult, half3 mainLightResult, half
     half3 rawLightSum = max(indirectResult, mainLightResult + additionalLightSumResult); // pick the highest between indirect and direct light
     return surfaceData.albedo * rawLightSum + emissionResult;
 }
-`

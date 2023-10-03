@@ -8,10 +8,12 @@ float GetCameraFOV()
     float fov = atan(1.0f / t) * 2.0 * Rad2Deg;
     return fov;
 }
+
 float ApplyOutlineDistanceFadeOut(float inputMulFix)
 {
     return saturate(inputMulFix);
 }
+
 float GetOutlineCameraFovAndDistanceFixMultiplier(float positionVS_Z)
 {
     float cameraMulFix;

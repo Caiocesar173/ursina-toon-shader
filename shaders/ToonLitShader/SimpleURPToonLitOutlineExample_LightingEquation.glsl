@@ -25,10 +25,34 @@ uniform vec3 _ShadowMapColor;
 uniform float _EmissionMulByBaseColor;
 uniform bool _IsFace;
 
-// Placeholder para a função SampleSH.
-// TODO: Implementar a função SampleSH ou substituir pela lógica correta.
-vec3 SampleSH(int index) {
-    return vec3(1.0, 1.0, 1.0);
+vec3 SampleSH(vec3 normalWS) {
+    // Inicialize a iluminação indireta como zero
+    vec3 indirectLighting = vec3(0.0, 0.0, 0.0);
+
+    // Calcula os polinômios esféricos para a direção dada
+    float Y0 = 0.282095f;
+    float Y1 = 0.488603f * normalWS.y;
+    float Y2 = 0.488603f * normalWS.z;
+    float Y3 = 0.488603f * normalWS.x;
+    float Y4 = 1.092548f * normalWS.x * normalWS.y;
+    float Y5 = 1.092548f * normalWS.y * normalWS.z;
+    float Y6 = 0.315392f * (3.0f * normalWS.z * normalWS.z - 1.0f);
+    float Y7 = 1.092548f * normalWS.x * normalWS.z;
+    float Y8 = 0.546274f * (normalWS.x * normalWS.x - normalWS.y * normalWS.y);
+
+    // Calcula a iluminação indireta usando os coeficientes SH e os polinômios esféricos
+    indirectLighting += SHCoefficients[0].xyz * Y0;
+    indirectLighting += SHCoefficients[1].xyz * Y1;
+    indirectLighting += SHCoefficients[2].xyz * Y2;
+    indirectLighting += SHCoefficients[3].xyz * Y3;
+    indirectLighting += SHCoefficients[4].xyz * Y4;
+    indirectLighting += SHCoefficients[5].xyz * Y5;
+    indirectLighting += SHCoefficients[6].xyz * Y6;
+    indirectLighting += SHCoefficients[7].xyz * Y7;
+    indirectLighting += SHCoefficients[8].xyz * Y8;
+
+    // Certifique-se de que a iluminação indireta não seja negativa
+    return max(indirectLighting, vec3(0.0, 0.0, 0.0));
 }
 
 // Funções de sombreamento

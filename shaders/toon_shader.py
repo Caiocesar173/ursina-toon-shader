@@ -1,7 +1,5 @@
 from math import tan, radians
-
 from ursina import Shader, Vec3, Vec4
-from panda3d.core import LVector4f
 from panda3d.core import PerspectiveLens
 
 
@@ -47,6 +45,8 @@ class ToonShader(Shader):
         else:
             ortho_w = lens.get_film_size()[1] / 2
 
+        self.scene.set_shader_input("u_fov", fov_horizontal)
+
         # Para panda3D_m11 & panda3D_ortho_w
         self.scene.set_shader_input("panda3D_m11", m11)
         self.scene.set_shader_input("panda3D_ortho_w", ortho_w)
@@ -62,43 +62,99 @@ class ToonShader(Shader):
         matrix_p = lens.get_projection_mat()
         self.scene.set_shader_input("panda3D_MATRIX_P", matrix_p)
 
-        self.scene.set_shader_input('p3d_LightColor', Vec3(1.0, 1.0, 1.0))
-        self.scene.set_shader_input('p3d_LightDirection', Vec3(0.0, 0.0, -1.0))
-        self.scene.set_shader_input('p3d_ColorScale', Vec4(1.0, 1.0, 1.0, 1.0))
-        self.scene.set_shader_input('p3d_AmbientLight', Vec3(0.2, 0.2, 0.2))
+        # General Variables
+        modelMatrix = None
+        viewMatrix = None
+        projectionMatrix = None
 
-        self.scene.set_shader_input('_EmissionMulByBaseColor', 1.0)
-        self.scene.set_shader_input('_IndirectLightMinColor', Vec3(1.0, 1.0, 1.0))
-        self.scene.set_shader_input('_CelShadeMidPoint', 0.5)
-        self.scene.set_shader_input('_CelShadeSoftness', 0.1)
-        self.scene.set_shader_input('_ReceiveShadowMappingAmount', 0.8)
-        self.scene.set_shader_input('_ShadowMapColor', Vec3(0.2, 0.2, 0.2))
-        self.scene.set_shader_input('_ShadowMapColor', Vec3(0.2, 0.2, 0.2))
-        self.scene.set_shader_input('_IsFace', True)
+        self.scene.set_shader_input('modelMatrix', modelMatrix)
+        self.scene.set_shader_input('viewMatrix', viewMatrix)
+        self.scene.set_shader_input('projectionMatrix', projectionMatrix)
 
+        # fog
+        fogStart = 10.0
+        fogEnd = 50.0
 
-        # print('#'*20)
-        # print('self.scene.light')
-        # print(self.scene.light)
-        # print('#'*20)
+        self.scene.set_shader_input('fogStart', fogStart)
+        self.scene.set_shader_input('fogEnd', fogEnd)
 
-        # self.scene.set_shader_input("DirectionalLightDirection", self.scene.light.direction)
-        # self.scene.set_shader_input("DirectionalLightColor", self.scene.light.color)
+        # camera
+        _CameraPositionWS = None
+        self.scene.set_shader_input('_CameraPositionWS', _CameraPositionWS)
 
-        # Substitua esses valores pelos valores reais ou cálculos
-        # _IndirectLightMinColor = [0.2, 0.2, 0.2]
-        # _CelShadeMidPoint = 0.5
-        # _CelShadeSoftness = 0.1
-        # _ReceiveShadowMappingAmount = 0.8
-        # _ShadowMapColor = [0.1, 0.1, 0.1]
-        # _EmissionMulByBaseColor = 0.5
-        # _IsFace = True
+        # high level settings
+        _IsFace = True
+        self.scene.set_shader_input('_IsFace', _IsFace)
 
-        # # Configurando as variáveis uniformes para o shader
-        # self.scene.set_shader_input("IndirectLightMinColor", _IndirectLightMinColor)
-        # self.scene.set_shader_input("CelShadeMidPoint", _CelShadeMidPoint)
-        # self.scene.set_shader_input("CelShadeSoftness", _CelShadeSoftness)
-        # self.scene.set_shader_input("ReceiveShadowMappingAmount", _ReceiveShadowMappingAmount)
-        # self.scene.set_shader_input("ShadowMapColor", _ShadowMapColor)
-        # self.scene.set_shader_input("EmissionMulByBaseColor", _EmissionMulByBaseColor)
-        # self.scene.set_shader_input("IsFace", _IsFace)
+        # base color
+        _BaseMap_ST = None
+        _BaseColor = None
+        self.scene.set_shader_input('_BaseMap_ST', _BaseMap_ST)
+        self.scene.set_shader_input('_BaseColor', _BaseColor)
+
+        # alpha
+        _Cutoff = None
+        self.scene.set_shader_input('_Cutoff', _Cutoff)
+
+        # emission
+        _UseEmission = None
+        _EmissionColor = None
+        _EmissionMap = None
+        _EmissionMapChannelMask = None
+        _EmissionMulByBaseColor = 1.0
+
+        self.scene.set_shader_input('_UseEmission', _UseEmission)
+        self.scene.set_shader_input('_EmissionColor', _EmissionColor)
+        self.scene.set_shader_input('_EmissionMap', _EmissionMap)
+        self.scene.set_shader_input('_EmissionMapChannelMask', _EmissionMapChannelMask)
+        self.scene.set_shader_input('_EmissionMulByBaseColor', _EmissionMulByBaseColor)
+
+        # occlusion
+        _UseOcclusion = None
+        _OcclusionStrength = None
+        _OcclusionMapChannelMask = None
+        _OcclusionRemapStart = None
+        _OcclusionRemapEnd = None
+
+        self.scene.set_shader_input('_UseOcclusion', _UseOcclusion)
+        self.scene.set_shader_input('_OcclusionStrength', _OcclusionStrength)
+        self.scene.set_shader_input('_OcclusionMapChannelMask', _OcclusionMapChannelMask)
+        self.scene.set_shader_input('_OcclusionRemapStart', _OcclusionRemapStart)
+        self.scene.set_shader_input('_OcclusionRemapEnd', _OcclusionRemapEnd)
+
+        # lighting
+        _IndirectLightMinColor = Vec3(1.0,1.0,1.0)
+        _CelShadeMidPoint = 0.5
+        _CelShadeSoftness = 0.1
+
+        self.scene.set_shader_input('_IndirectLightMinColor', _IndirectLightMinColor)
+        self.scene.set_shader_input('_CelShadeMidPoint', _CelShadeMidPoint)
+        self.scene.set_shader_input('_CelShadeSoftness', _CelShadeSoftness)
+
+        # shadow mapping
+        _ReceiveShadowMappingAmount = 0.8
+        _ReceiveShadowMappingPosOffset = None
+        _ShadowMapColor = Vec3(0.2,0.2,0.2)
+        shadowBias = 0.005
+        _MAIN_LIGHT_SHADOWS = None
+
+        self.scene.set_shader_input('_ReceiveShadowMappingAmount', _ReceiveShadowMappingAmount)
+        self.scene.set_shader_input('_ReceiveShadowMappingPosOffset', _ReceiveShadowMappingPosOffset)
+        self.scene.set_shader_input('_ShadowMapColor', _ShadowMapColor)
+        self.scene.set_shader_input('shadowBias', shadowBias)
+        self.scene.set_shader_input('_MAIN_LIGHT_SHADOWS', _MAIN_LIGHT_SHADOWS)
+
+        # outline
+        _OutlineWidth = 0.5
+        _OutlineColor = None
+        _OutlineZOffset = None
+        _OutlineZOffsetMaskTex = None
+        _OutlineZOffsetMaskRemapStart = None
+        _OutlineZOffsetMaskRemapEnd = None
+
+        self.scene.set_shader_input('_OutlineWidth', _OutlineWidth)
+        self.scene.set_shader_input('_OutlineColor', _OutlineColor)
+        self.scene.set_shader_input('_OutlineZOffset', _OutlineZOffset)
+        self.scene.set_shader_input('_OutlineZOffsetMaskTex', _OutlineZOffsetMaskTex)
+        self.scene.set_shader_input('_OutlineZOffsetMaskRemapStart', _OutlineZOffsetMaskRemapStart)
+        self.scene.set_shader_input('_OutlineZOffsetMaskRemapEnd', _OutlineZOffsetMaskRemapEnd)

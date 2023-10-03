@@ -1,20 +1,7 @@
-// Estruturas de dados equivalentes
-struct ToonSurfaceData {
-    vec3 albedo;
-    float occlusion;
-    vec3 emission;
-};
+// For more information, visit -> https://github.com/ColinLeung-NiloCat/UnityURPToonLitShaderExample
 
-struct ToonLightingData {
-    vec3 normalWS;
-};
-
-struct Light {
-    vec3 direction;
-    vec3 color;
-    float distanceAttenuation;
-    float shadowAttenuation;
-};
+// This file is intented for you to edit and experiment with different lighting equation.
+// Add or edit whatever code you want here
 
 // Variáveis uniformes (substitutos para as variáveis do Unity)
 uniform vec3 _IndirectLightMinColor;
@@ -57,24 +44,49 @@ vec3 SampleSH(vec3 normalWS) {
 
 // Funções de sombreamento
 vec3 ShadeGI(ToonSurfaceData surfaceData, ToonLightingData lightingData) {
+    // hide 3D feeling by ignoring all detail SH (leaving only the constant SH term)
+    // we just want some average envi indirect color only
     vec3 averageSH = SampleSH(0);
+
+    // can prevent result becomes completely black if lightprobe was not baked
     averageSH = max(_IndirectLightMinColor, averageSH);
+
+    // occlusion (maximum 50% darken for indirect to prevent result becomes completely black)
     float indirectOcclusion = mix(1.0, surfaceData.occlusion, 0.5);
     return averageSH * indirectOcclusion;
 }
 
+// Most important part: lighting equation, edit it according to your needs, write whatever you want here, be creative!
+// This function will be used by all direct lights (directional/point/spot)
 vec3 ShadeSingleLight(ToonSurfaceData surfaceData, ToonLightingData lightingData, Light light, bool isAdditionalLight) {
     vec3 N = lightingData.normalWS;
     vec3 L = light.direction;
+
     float NoL = dot(N, L);
+
     float lightAttenuation = 1.0;
-    float distanceAttenuation = min(4.0, light.distanceAttenuation);
+
+    // light's distance & angle fade for point light & spot light (see GetAdditionalPerObjectLight(...) in Lighting.hlsl)
+    // Lighting.hlsl -> https://github.com/Unity-Technologies/Graphics/blob/master/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl
+    float distanceAttenuation = min(4.0, light.distanceAttenuation); //clamp to prevent light over bright if point/spot light too close to vertex
+
+    // N dot L
+    // simplest 1 line cel shade, you can always replace this line by your own method!
     float litOrShadowArea = smoothstep(_CelShadeMidPoint - _CelShadeSoftness, _CelShadeMidPoint + _CelShadeSoftness, NoL);
+
+    // occlusion
     litOrShadowArea *= surfaceData.occlusion;
+
+    // face ignore celshade since it is usually very ugly using NoL method
     litOrShadowArea = _IsFace ? mix(0.5, 1.0, litOrShadowArea) : litOrShadowArea;
+
+    // light's shadow map
     litOrShadowArea *= mix(1.0, light.shadowAttenuation, _ReceiveShadowMappingAmount);
     vec3 litOrShadowColor = mix(_ShadowMapColor, vec3(1.0), litOrShadowArea);
     vec3 lightAttenuationRGB = litOrShadowColor * distanceAttenuation;
+
+    // saturate() light.color to prevent over bright
+    // additional light reduce intensity since it is additive
     return clamp(light.color, 0.0, 1.0) * lightAttenuationRGB * (isAdditionalLight ? 0.25 : 1.0);
 }
 
@@ -84,6 +96,9 @@ vec3 ShadeEmission(ToonSurfaceData surfaceData, ToonLightingData lightingData) {
 }
 
 vec3 CompositeAllLightResults(vec3 indirectResult, vec3 mainLightResult, vec3 additionalLightSumResult, vec3 emissionResult, ToonSurfaceData surfaceData, ToonLightingData lightingData) {
+    // [remember you can write anything here, this is just a simple tutorial method]
+    // here we prevent light over bright,
+    // while still want to preserve light color's hue
     vec3 rawLightSum = max(indirectResult, mainLightResult + additionalLightSumResult);
     return surfaceData.albedo * rawLightSum + emissionResult;
 }

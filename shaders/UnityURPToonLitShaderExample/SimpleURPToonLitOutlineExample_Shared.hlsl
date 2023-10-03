@@ -70,6 +70,20 @@ struct ToonLightingData
     half3   viewDirectionWS;
     float4  shadowCoord;
 };
+
+uniform float u_fov;
+
+float GetOutlineCameraFovAndDistanceFixMultiplier(float positionVS_Z) {
+    // Parâmetros da câmera, como FOV, podem ser passados como variáveis uniformes
+    float fov = u_fov; // Campo de visão da câmera em radianos
+
+    // Implemente sua lógica aqui. Este é apenas um exemplo simplificado.
+    float distanceFactor = 1.0 / (positionVS_Z + 1.0);
+    float fovFactor = tan(fov * 0.5);
+
+    return distanceFactor * fovFactor;
+}
+
 float3 TransformPositionWSToOutlinePositionWS(float3 positionWS, float positionVS_Z, float3 normalWS)
 {
     float outlineExpandAmount = _OutlineWidth * GetOutlineCameraFovAndDistanceFixMultiplier(positionVS_Z);
@@ -165,6 +179,7 @@ ToonSurfaceData InitializeSurfaceData(Varyings input)
     output.occlusion = GetFinalOcculsion(input);
     return output;
 }
+
 ToonLightingData InitializeLightingData(Varyings input)
 {
     ToonLightingData lightingData;
@@ -201,6 +216,7 @@ half3 ShadeAllLights(ToonSurfaceData surfaceData, ToonLightingData lightingData)
     half3 emissionResult = ShadeEmission(surfaceData, lightingData);
     return CompositeAllLightResults(indirectResult, mainLightResult, additionalLightSumResult, emissionResult, surfaceData, lightingData);
 }
+// ----------------X---------------- //
 
 half3 ConvertSurfaceColorToOutlineColor(half3 originalSurfaceColor)
 {

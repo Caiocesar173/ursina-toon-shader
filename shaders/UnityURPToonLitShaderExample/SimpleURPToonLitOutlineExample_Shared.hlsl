@@ -216,7 +216,6 @@ half3 ShadeAllLights(ToonSurfaceData surfaceData, ToonLightingData lightingData)
     half3 emissionResult = ShadeEmission(surfaceData, lightingData);
     return CompositeAllLightResults(indirectResult, mainLightResult, additionalLightSumResult, emissionResult, surfaceData, lightingData);
 }
-// ----------------X---------------- //
 
 half3 ConvertSurfaceColorToOutlineColor(half3 originalSurfaceColor)
 {
@@ -228,6 +227,8 @@ half3 ApplyFog(half3 color, Varyings input)
     color = MixFog(color, fogFactor);
     return color;
 }
+// ----------------X---------------- //
+
 half4 ShadeFinalColor(Varyings input) : SV_TARGET
 {
     UNITY_SETUP_INSTANCE_ID(input);
@@ -243,6 +244,7 @@ half4 ShadeFinalColor(Varyings input) : SV_TARGET
     color = ApplyFog(color, input);
     return half4(color, surfaceData.alpha);
 }
+
 void AlphaClipAndLODTest(Varyings input)
 {
     DoClipTestToTargetAlphaValue(GetFinalBaseColor(input).a);

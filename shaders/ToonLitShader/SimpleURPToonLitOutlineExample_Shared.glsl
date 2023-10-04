@@ -41,9 +41,10 @@ struct Varyings {
 // CBUFFER and Uniforms
 // (you should put all uniforms of all passes inside this single UnityPerMaterial CBUFFER! else SRP batching is not possible!)
 ///////////////////////////////////////////////////////////////////////////////////////
+#define MAX_OBJECTS 100 // ou qualquer outro valor que você escolher
+#define MAX_LIGHTS 50  // ou qualquer outro valor que você escolher
 
 // Variáveis Uniformes
-uniform sampler2D _OutlineZOffsetMaskTex;
 
 // camera
 uniform float u_fov;
@@ -52,6 +53,7 @@ uniform vec3 _CameraPositionWS;
 // fog
 uniform float fogStart;
 uniform float fogEnd;
+uniform float fogColor;
 
 // high level settings
 uniform float _IsFace;
@@ -68,6 +70,7 @@ uniform float _UseEmission;
 uniform vec3  _EmissionColor;
 uniform float _EmissionMulByBaseColor;
 uniform vec3  _EmissionMapChannelMask;
+uniform sampler2D _EmissionTexture;
 
 // occlusion
 uniform float _UseOcclusion;
@@ -81,17 +84,29 @@ uniform vec3  _LightDirection;
 uniform vec3  _IndirectLightMinColor;
 uniform float _CelShadeMidPoint;
 uniform float _CelShadeSoftness;
+uniform samplerCube _EnvMap;
+uniform vec3 _MainLightDirection;
+uniform vec3 _MainLightColor;
+uniform int _AdditionalLightsCount;
+
+uniform Light _AdditionalLights[MAX_LIGHTS]; // MAX_LIGHTS é o número máximo de luzes adicionais na cena
+uniform int _PerObjectLightIndices[MAX_OBJECTS];
+uniform Light _AdditionalLights[MAX_LIGHTS];
 
 // shadow mapping
 uniform float _ReceiveShadowMappingAmount;
 uniform float _ReceiveShadowMappingPosOffset;
 uniform vec3  _ShadowMapColor;
 uniform float shadowBias;
+uniform mat4 _ShadowMatrix;
+uniform sampler2D _ShadowMap;
+uniform sampler2D _AdditionalShadowMaps[MAX_LIGHTS];
 
 // outline
 uniform float _OutlineWidth;
 uniform vec3  _OutlineColor;
 uniform float _OutlineZOffset;
+uniform sampler2D _OutlineZOffsetMaskTex;
 uniform float _OutlineZOffsetMaskRemapStart;
 uniform float _OutlineZOffsetMaskRemapEnd;
 
@@ -218,7 +233,6 @@ vec4 TransformWorldToHClip(vec4 positionWS) {
     return positionCS;
 }
 
-
 vec3 ApplyShadowBias(vec3 positionWS, vec3 normalWS, vec3 lightDirection) {
     // Calcula o viés de sombra
     vec3 bias = normalWS * shadowBias;
@@ -334,6 +348,108 @@ ToonLightingData InitializeLightingData(Varyings input) {
     return lightingData;
 }
 
+Light GetMainLight() {
+    Light mainLight;
+    mainLight.direction = _MainLightDirection; // Direção da luz principal
+    mainLight.color = _MainLightColor; // Cor da luz principal
+    // Adicione outros parâmetros conforme necessário
+    return mainLight;
+}
+
+vec3 ShadeGI(ToonSurfaceData surfaceData, ToonLightingData lightingData) {
+    // Implementação de exemplo que usa um mapa de ambiente para iluminação indireta
+    vec3 indirectLight = textureCube(_EnvMap, reflect(-lightingData.viewDirectionWS, lightingData.normalWS)).rgb;
+    indirectLight *= surfaceData.albedo; // Multiplica pelo albedo para obter a cor final
+    return indirectLight;
+}
+
+vec4 TransformWorldToShadowCoord(vec3 worldPos) {
+    return _ShadowMatrix * vec4(worldPos, 1.0);
+}
+
+float MainLightRealtimeShadow(vec4 shadowCoord) {
+    float shadow = texture(_ShadowMap, shadowCoord.xy).r;
+    return (shadow < shadowCoord.z) ? 0.0 : 1.0;
+}
+
+vec3 ShadeSingleLight(SurfaceData surfaceData, LightingData lightingData, Light light, bool isAdditional) {
+    vec3 lightDir = normalize(light.position - surfaceData.position);
+    float NdotL = max(dot(surfaceData.normal, lightDir), 0.0);
+    vec3 diffuse = NdotL * surfaceData.albedo * light.color;
+
+    if (isAdditional) {
+        // Código específico para luzes adicionais, se necessário
+    }
+
+    return diffuse;
+}
+
+int GetAdditionalLightsCount() {
+    return _AdditionalLightsCount;
+}
+
+int GetPerObjectLightIndex(int i) {
+    return _PerObjectLightIndices[i];
+}
+
+Light GetAdditionalPerObjectLight(int perObjectLightIndex, vec3 worldPos) {
+    // Aqui você pode adicionar lógica adicional para selecionar a luz com base na posição do mundo, se necessário
+    return _AdditionalLights[perObjectLightIndex];
+}
+
+float AdditionalLightRealtimeShadow(int perObjectLightIndex, vec3 worldPos) {
+    // Transformar a posição do mundo para coordenadas do mapa de sombras
+    // (Você precisará de uma matriz de transformação para isso, que deve ser passada como uma variável uniforme)
+    vec4 shadowCoord = TransformWorldToShadowCoord(worldPos); // Função a ser implementada
+
+    // Obter a atenuação da sombra do mapa de sombras
+    float shadowAttenuation = texture(_AdditionalShadowMaps[perObjectLightIndex], shadowCoord.xy).r;
+
+    return shadowAttenuation;
+}
+
+vec3 ShadeEmission(ToonSurfaceData surfaceData, ToonLightingData lightingData) {
+    // Obter a cor de emissão da textura de emissão
+    vec3 emissionColor = texture(_EmissionTexture, surfaceData.uv).rgb;
+
+    // Multiplicar pela intensidade de emissão, se você tiver uma
+    emissionColor *= surfaceData.emissionIntensity; // Supondo que emissionIntensity é um campo em ToonSurfaceData
+
+    return emissionColor;
+}
+
+vec3 CompositeAllLightResults(
+    vec3 indirect,
+    vec3 mainLight,
+    vec3 additionalLights,
+    vec3 emission,
+    SurfaceData surfaceData,
+    LightingData lightingData,
+    float transparencyFactor = 0.0,
+    float postProcessIntensity = 1.0
+) {
+    // Inicializar a cor final como preta
+    vec3 finalColor = vec3(0.0);
+
+    // Composição de iluminação: vetorização para melhor desempenho
+    finalColor += indirect + mainLight + additionalLights + emission;
+
+    // Aplicar a cor base (albedo) da superfície
+    finalColor *= surfaceData.albedo;
+
+    // Efeito de neblina (exemplo)
+    float fogFactor = exp2(-lightingData.fogDensity * lightingData.fogDensity * lightingData.fogDepth * lightingData.fogDepth * 1.442695);
+    finalColor = mix(finalColor, lightingData.fogColor, fogFactor);
+
+    // Aplicar transparência
+    finalColor *= vec3(1.0 - transparency);
+
+    // Efeitos de pós-processamento como tonemapping ou correção de cor
+    finalColor = postProcessEffect(finalColor, postProcessIntensity);
+
+    return finalColor;
+}
+
 vec3 ShadeAllLights(ToonSurfaceData surfaceData, ToonLightingData lightingData) {
     vec3 indirectResult = ShadeGI(surfaceData, lightingData);
     Light mainLight = GetMainLight();
@@ -359,4 +475,12 @@ vec3 ShadeAllLights(ToonSurfaceData surfaceData, ToonLightingData lightingData) 
 
     vec3 emissionResult = ShadeEmission(surfaceData, lightingData);
     return CompositeAllLightResults(indirectResult, mainLightResult, additionalLightSumResult, emissionResult, surfaceData, lightingData);
+}
+
+vec3 MixFog(vec3 color, float fogFactor) {
+    return mix(color, fogColor, fogFactor);
+}
+
+vec3 ApplyFog(vec3 color, float fogFactor) {
+    return MixFog(color, fogFactor);
 }

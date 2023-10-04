@@ -6,9 +6,9 @@ from panda3d.core import PerspectiveLens
 class ToonShader(Shader):
     name = "toon_shader"
     language = Shader.GLSL
-    vertex = None
-    fragment = None
-    geometry = None
+    vertex = '/shaders/celShader/celShader_vertex.glsl'
+    fragment = '/shaders/celShader/celShader_fragment.glsl'
+    geometry = ''
     scene = None
     current_object = None
 
@@ -16,7 +16,7 @@ class ToonShader(Shader):
         self.language = kwargs.get('language', self.language)
         self.scene = kwargs.get('scene', self.scene)
 
-        self.update()
+        # self.update()
 
         super().__init__(
             self.name,
@@ -74,9 +74,11 @@ class ToonShader(Shader):
         # fog
         fogStart = 10.0
         fogEnd = 50.0
+        fogColor = Vec3(1.0, 1.0, 1.0)
 
         self.scene.set_shader_input('fogStart', fogStart)
         self.scene.set_shader_input('fogEnd', fogEnd)
+        self.scene.set_shader_input('fogColor', fogColor)
 
         # camera
         _CameraPositionWS = None
@@ -102,12 +104,14 @@ class ToonShader(Shader):
         _EmissionMap = None
         _EmissionMapChannelMask = None
         _EmissionMulByBaseColor = 1.0
+        _EmissionTexture = None
 
         self.scene.set_shader_input('_UseEmission', _UseEmission)
         self.scene.set_shader_input('_EmissionColor', _EmissionColor)
         self.scene.set_shader_input('_EmissionMap', _EmissionMap)
         self.scene.set_shader_input('_EmissionMapChannelMask', _EmissionMapChannelMask)
         self.scene.set_shader_input('_EmissionMulByBaseColor', _EmissionMulByBaseColor)
+        self.scene.set_shader_input('_EmissionTexture', _EmissionTexture)
 
         # occlusion
         _UseOcclusion = None
@@ -127,9 +131,27 @@ class ToonShader(Shader):
         _CelShadeMidPoint = 0.5
         _CelShadeSoftness = 0.1
 
+        _EnvMap = None
+        _MainLightDirection = None
+        _MainLightColor = None
+        _AdditionalLightsCount = None
+
+        _AdditionalLights = None
+        _PerObjectLightIndices = None
+        _AdditionalLights = None
+
+        self.scene.set_shader_input('_EnvMap', _EnvMap)
+        self.scene.set_shader_input('_MainLightDirection', _MainLightDirection)
+        self.scene.set_shader_input('_MainLightColor', _MainLightColor)
+        self.scene.set_shader_input('_AdditionalLightsCount', _AdditionalLightsCount)
+
         self.scene.set_shader_input('_IndirectLightMinColor', _IndirectLightMinColor)
         self.scene.set_shader_input('_CelShadeMidPoint', _CelShadeMidPoint)
         self.scene.set_shader_input('_CelShadeSoftness', _CelShadeSoftness)
+
+        self.scene.set_shader_input('_AdditionalLights', _AdditionalLights)
+        self.scene.set_shader_input('_PerObjectLightIndices', _PerObjectLightIndices)
+        self.scene.set_shader_input('_AdditionalLights', _AdditionalLights)
 
         # shadow mapping
         _ReceiveShadowMappingAmount = 0.8
@@ -137,12 +159,18 @@ class ToonShader(Shader):
         _ShadowMapColor = Vec3(0.2,0.2,0.2)
         shadowBias = 0.005
         _MAIN_LIGHT_SHADOWS = None
+        _ShadowMatrix = None
+        _ShadowMap = None
+        _AdditionalShadowMaps = None
 
         self.scene.set_shader_input('_ReceiveShadowMappingAmount', _ReceiveShadowMappingAmount)
         self.scene.set_shader_input('_ReceiveShadowMappingPosOffset', _ReceiveShadowMappingPosOffset)
         self.scene.set_shader_input('_ShadowMapColor', _ShadowMapColor)
         self.scene.set_shader_input('shadowBias', shadowBias)
         self.scene.set_shader_input('_MAIN_LIGHT_SHADOWS', _MAIN_LIGHT_SHADOWS)
+        self.scene.set_shader_input('_ShadowMatrix', _ShadowMatrix)
+        self.scene.set_shader_input('_ShadowMap', _ShadowMap)
+        self.scene.set_shader_input('_AdditionalShadowMaps', _AdditionalShadowMaps)
 
         # outline
         _OutlineWidth = 0.5

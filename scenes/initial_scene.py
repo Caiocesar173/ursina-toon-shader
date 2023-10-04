@@ -13,15 +13,15 @@ class InitialScene(CelScene):
             model='cube',
             collider='box',
             scale=(1, 1, 1),
-            position=(0, 1, 0),
+            position=(2, 1, 0),
             material=PrototypeOrangeMaterial(),
         )
 
         GameObject(
-            model='circle',
+            model='sphere',
             collider='box',
             scale=(1, 1, 1),
-            position=(0, 2, 0),
+            position=(4, 1, 4),
             material=PrototypeOrangeMaterial(),
         )
 

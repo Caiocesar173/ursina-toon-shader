@@ -1,6 +1,4 @@
-from math import tan, radians
-from ursina import Shader, Vec3, Vec4
-from panda3d.core import PerspectiveLens
+from ursina import Shader
 
 
 class CelShader(Shader):
@@ -9,15 +7,10 @@ class CelShader(Shader):
     vertex = '/shaders/celShader/celShader_vertex.glsl'
     fragment = '/shaders/celShader/celShader_fragment.glsl'
     geometry = ''
-    scene = None
     current_object = None
+    scene = None
 
-    def __init__(self, **kwargs):
-        self.language = kwargs.get('language', self.language)
-        self.scene = kwargs.get('scene', self.scene)
-
-        # self.update()
-
+    def __init__(self, *args, **kwargs):
         super().__init__(
             self.name,
             self.language,
@@ -26,8 +19,6 @@ class CelShader(Shader):
             self.geometry,
             **kwargs
         )
-
-        self.scene.shader = self
 
     def update(self):
         pass

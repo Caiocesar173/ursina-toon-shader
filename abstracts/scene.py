@@ -12,6 +12,7 @@ class Scene(GameObject):
         self.setup_camera()
         self.setup_light()
         self.setup_floor()
+        self.setup_skybox()
 
     def load_shader(self, shader_path):
         """Carrega o shader básico."""
@@ -32,4 +33,17 @@ class Scene(GameObject):
             scale=(100, 1, 100),
             material=PrototypeDarkMaterial(),
             collider='box'
+        )
+
+    def setup_skybox(self):
+        self.skybox = GameObject(
+            parent=self,
+            model="sphere",
+            # model='models/skybox/base_skybox',
+            texture="textures/skybox/base_skybox",
+            scale=1000,
+            # scale=(1, 1, 1),
+            position=(5, 1, 5),
+            double_sided=True,
+            eternally_moving=True
         )

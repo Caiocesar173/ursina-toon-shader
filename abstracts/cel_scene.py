@@ -1,55 +1,71 @@
-from ursina import AmbientLight, PointLight, color, raycast, Shader
-from abstracts.scene import Scene
-from shaders.cel_shader.shader import CelShader
+import time
+from math import sin, cos, radians
+from ursina import DirectionalLight, PointLight, color, raycast
 
+from shaders.cel.cel_shader import CelShader
+from abstracts.scene import Scene, GameObject
+from prefabs.sun import SunLight
+from materials.prototype import PrototypeOrangeMaterial
 
 class CelScene(Scene):
+    initial_light_intensity = .5
+
     def __init__(self, **kwargs):
+        self.define_scene()
         super().__init__(**kwargs)
-        self.shader = CelShader()
-        self.shader.scene = self
 
-        if(self.shader):
-            base.camera.setShader(self.shader._shader)
+    def define_scene(self):
+        cube = GameObject(
+            parent=self,
+            model='cube',
+            collider='box',
+            scale=(1, 1, 1),
+            position=(2, 1, 1),
+            material=PrototypeOrangeMaterial(),
+        )
 
-    def update(self):
-        self.update_ray()
+        cube.shader=CelShader(scene=cube),
+
+    def load_shader(self):
+        return CelShader(scene=self)
 
     def setup_light(self):
         """Configurações de luz."""
-        self.ambient_light = AmbientLight(parent=self, color=color.white * 0.6)
-
-        # Adicionando quatro luzes pontuais
+        self.sun = SunLight(skybox=self.skybox)
         self.point_light1 = PointLight(
             parent=self,
             position=(10, 15, -10),
-            color=color.white * 0.6
+            color=color.white * self.initial_light_intensity
         )
         self.point_light2 = PointLight(
             parent=self,
             position=(-10, -5, 10),
-            color=color.white * 0.6
-        )  # Luz azulada
+            color=color.white * self.initial_light_intensity
+        )
         self.point_light3 = PointLight(
             parent=self,
             position=(10, -5, 10),
-            color=color.white * 0.6
-        )    # Luz avermelhada
+            color=color.white * self.initial_light_intensity
+        )
         self.point_light4 = PointLight(
             parent=self,
             position=(-10, 15, -10),
-            color=color.white * 0.6
-        ) # Luz esverdeada
-
-
-    def update_ray(self):
-        """Atualizar a posição e a direção do raio para coincidir com a câmera."""
-        hit_info = raycast(
-            origin=self.camera.position,
-            direction=self.camera.forward,
-            distance=100,
-            ignore=[self.camera, ]
+            color=color.white * self.initial_light_intensity
         )
 
-        if hit_info.hit:
-            self.shader.current_object = hit_info.entity
+    def update(self):
+        # self.sun.update()
+        # super().update()
+        # self.update_lights()
+        pass
+
+    def update_lights(self):
+        self.point_light1.intensity = 0.5 * self.sun.intensity_factor
+        self.point_light2.intensity = 0.5 * self.sun.intensity_factor
+        self.point_light3.intensity = 0.5 * self.sun.intensity_factor
+        self.point_light4.intensity = 0.5 * self.sun.intensity_factor
+
+        self.skybox.set_shader_input('sunY', self.sun.y)
+        self.skybox.set_shader_input("view", self.view_matrix)
+        self.skybox.set_shader_input("projection", self.projection_matrix)
+        self.skybox.set_shader_input('light_position', self.sun.position)

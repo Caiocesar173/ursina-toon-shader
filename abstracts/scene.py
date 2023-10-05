@@ -1,22 +1,38 @@
-from ursina import Shader, AmbientLight, color, EditorCamera
+from panda3d.core import LineSegs, NodePath
+from ursina import Shader, AmbientLight, EditorCamera, color, raycast, Vec3
+
 from abstracts.game_object import GameObject
 from materials.prototype import PrototypeDarkMaterial
+from shaders.skybox.skybox_shader import SkyBoxShader
+
+def draw_line(start, end, color=(1,0,0,1)):
+    lines = LineSegs()
+    lines.set_color(color)
+    lines.move_to(start)
+    lines.draw_to(end)
+    node = lines.create()
+    return NodePath(node)
 
 class Scene(GameObject):
-    def __init__(self, name=None, shader_path='shaders/basic_shader', **kwargs):
+    skybox = None
+    looking_at = None
+    view_matrix = None
+    projection_matrix = None
+
+    def __init__(self, name=None, **kwargs):
         super().__init__(**kwargs)
 
         self.name = name if name else self.__class__.__name__.lower()
-        self.shader = self.load_shader(shader_path)
 
+        self.load_shader()
         self.setup_camera()
+        self.setup_skybox()
         self.setup_light()
         self.setup_floor()
-        self.setup_skybox()
 
-    def load_shader(self, shader_path):
+    def load_shader(self):
         """Carrega o shader básico."""
-        return Shader(language=Shader.GLSL, path=shader_path)
+        return Shader()
 
     def setup_camera(self):
         """Configurações da câmera comum."""
@@ -39,11 +55,34 @@ class Scene(GameObject):
         self.skybox = GameObject(
             parent=self,
             model="sphere",
-            # model='models/skybox/base_skybox',
-            texture="textures/skybox/base_skybox",
-            scale=1000,
-            # scale=(1, 1, 1),
+            # texture="textures/skybox/base_skybox",
+            scale=9900,
             position=(5, 1, 5),
             double_sided=True,
             eternally_moving=True
         )
+
+        self.skybox.shader = SkyBoxShader(skybox=self.skybox)
+
+    def update_looking_at(self):
+        """Atualizar a posição e a direção do raio para coincidir com a câmera."""
+        hit_info = raycast(
+            origin=self.camera.position,
+            direction=self.camera.forward,
+            distance=100,
+            ignore=[self.camera, self.floor]
+        )
+
+        if hit_info.hit:
+            line = draw_line(self.camera.position, hit_info.world_point)
+            self.looking_at = hit_info.entity
+            line.reparent_to(self)
+
+            if(hasattr(self.shader, 'current_object')):
+                self.shader.current_object = hit_info.entity
+
+    def update(self):
+        self.projection_matrix = base.cam.node().get_lens().get_projection_mat()
+        self.view_matrix = base.cam.node().get_lens().get_view_mat()
+
+        self.update_looking_at()

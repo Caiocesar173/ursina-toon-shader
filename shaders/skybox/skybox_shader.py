@@ -10,8 +10,6 @@ class SkyBoxShader:
     skybox = None
 
     sunY = 0
-    view = Mat4()
-    projection = Mat4()
 
     def load_shader(self, shader_path):
         with open(shader_path, 'r') as f:
@@ -27,6 +25,3 @@ class SkyBoxShader:
             vertex,
             fragment,
         )
-
-    # def update(self):
-        # self.set_shader_input('sunY', self.sunY)

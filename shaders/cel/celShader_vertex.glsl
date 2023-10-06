@@ -1,18 +1,21 @@
 #version 330
 
-layout(location = 0) in vec3 in_position;
-layout(location = 1) in vec3 in_normal;
+layout (location=0) in vec3 position;
+layout (location=1) in vec2 texCoord;
+layout (location=2) in vec3 vertexNormal;
 
-uniform vec4 model;
-uniform vec4 view;
-uniform vec4 projection;
+out vec2 outTexCoord;
+out vec3 mvVertexNormal;
+out vec3 mvVertexPos;
 
-out vec3 frag_normal;
-out vec3 frag_position;
+uniform mat4 p3d_ModelMatrix;
+uniform mat4 p3d_ModelViewProjectionMatrix;
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(in_position, 1.0);
-    frag_normal = mat3(transpose(inverse(model))) * in_normal;
-    frag_position = vec3(model * vec4(in_position, 1.0));
+    vec4 mvPos = p3d_ModelMatrix * vec4(position, 1.0);
+    gl_Position = p3d_ModelViewProjectionMatrix * mvPos;
+    outTexCoord = texCoord;
+    mvVertexNormal = normalize(p3d_ModelMatrix * vec4(vertexNormal, 0.0)).xyz;
+    mvVertexPos = mvPos.xyz;
 }

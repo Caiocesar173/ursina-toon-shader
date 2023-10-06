@@ -60,15 +60,12 @@ class Scene(GameObject):
         self.skybox = GameObject(
             parent=self,
             model="sphere",
-            texture="textures/skybox/base_skybox",
             scale=100,
             position=(5, 1, 5),
             double_sided=True,
             eternally_moving=True,
             shader=SkyBoxShader().shader
         )
-
-        # self.skybox.set_shader(instance)
 
     def update_looking_at(self):
         """Atualizar a posição e a direção do raio para coincidir com a câmera."""

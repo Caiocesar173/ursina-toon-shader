@@ -55,7 +55,6 @@ class CelScene(Scene):
     def update(self):
         super().update()
         self.update_lights()
-        # self.skybox.shader.update()
 
     def update_lights(self):
         self.point_light1.intensity = 0.5 * self.sun.intensity_factor
@@ -63,6 +62,4 @@ class CelScene(Scene):
         self.point_light3.intensity = 0.5 * self.sun.intensity_factor
         self.point_light4.intensity = 0.5 * self.sun.intensity_factor
 
-        self.skybox.set_shader_input('sunY', self.sun.y)
-        # self.skybox.set_shader_input('view', self.view_matrix)
-        # self.skybox.set_shader_input('projection', self.projection_matrix)
+        self.skybox.set_shader_input('sunPosition', self.sun.position)

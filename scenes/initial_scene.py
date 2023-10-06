@@ -7,6 +7,7 @@ from materials.prototype import PrototypeOrangeMaterial, PrototypeGreenMaterial
 from shaders.red.red_shader import RedShader
 from ursina.shaders import normals_shader
 
+from panda3d.core import Shader as Panda3dShader
 
 class InitialScene(CelScene):
     vertex = '''
@@ -51,10 +52,7 @@ class InitialScene(CelScene):
             material=PrototypeOrangeMaterial(),
         )
 
-        instance = Shader(language=Shader.GLSL, vertex=self.vertex, fragment=self.fragment)
-        cubeee = GameObject(model='cube', texture='', position=(-5, 1, 2), shader=instance)
-        cubeee = GameObject(model='cube', position=(-7, 1, 2), shader=RedShader().shader)
-        self.e = GameObject(model='cube', texture='perlin_noise', position=(-3, 1, 2), shader=normals_shader  )
-
     def setup_camera(self):
         self.camera = FirstPersonController()
+        instance = Shader(language=Shader.GLSL, vertex=self.vertex, fragment=self.fragment)
+        self.camera.shader = instance

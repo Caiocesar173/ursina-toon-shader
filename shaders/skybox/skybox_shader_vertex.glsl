@@ -1,15 +1,10 @@
-#version 330 core
-
-layout(location = 0) in vec3 aPos;
-
-out vec3 TexCoords;
+#version 330
 
 uniform mat4 p3d_ModelViewProjectionMatrix;
-uniform mat4 p3d_ModelMatrix;
 in vec4 p3d_Vertex;
+out vec3 TexCoords;
 
-void main()
-{
-    TexCoords = aPos;
-    gl_Position =  p3d_ModelViewProjectionMatrix * p3d_ModelMatrix * vec4(aPos, 1.0);
+void main() {
+    gl_Position = p3d_ModelViewProjectionMatrix * p3d_Vertex;
+    TexCoords = p3d_Vertex.xyz;
 }

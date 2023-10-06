@@ -1,11 +1,10 @@
-import time
-from math import sin, cos, radians
-from ursina import DirectionalLight, PointLight, color, raycast
+from ursina import PointLight, color
 
+from prefabs.sun import SunLight
 from shaders.cel.cel_shader import CelShader
 from abstracts.scene import Scene, GameObject
-from prefabs.sun import SunLight
 from materials.prototype import PrototypeOrangeMaterial
+
 
 class CelScene(Scene):
     initial_light_intensity = .5
@@ -24,14 +23,14 @@ class CelScene(Scene):
             material=PrototypeOrangeMaterial(),
         )
 
-        cube.shader=CelShader(scene=cube),
+        cube.shader = CelShader(scene=cube),
 
     def load_shader(self):
         return CelShader(scene=self)
 
     def setup_light(self):
         """Configurações de luz."""
-        self.sun = SunLight(skybox=self.skybox)
+        self.sun = SunLight(parent=self, skybox=self.skybox)
         self.point_light1 = PointLight(
             parent=self,
             position=(10, 15, -10),
@@ -54,10 +53,9 @@ class CelScene(Scene):
         )
 
     def update(self):
-        # self.sun.update()
-        # super().update()
-        # self.update_lights()
-        pass
+        super().update()
+        self.update_lights()
+        # self.skybox.shader.update()
 
     def update_lights(self):
         self.point_light1.intensity = 0.5 * self.sun.intensity_factor
@@ -66,6 +64,5 @@ class CelScene(Scene):
         self.point_light4.intensity = 0.5 * self.sun.intensity_factor
 
         self.skybox.set_shader_input('sunY', self.sun.y)
-        self.skybox.set_shader_input("view", self.view_matrix)
-        self.skybox.set_shader_input("projection", self.projection_matrix)
-        self.skybox.set_shader_input('light_position', self.sun.position)
+        # self.skybox.set_shader_input('view', self.view_matrix)
+        # self.skybox.set_shader_input('projection', self.projection_matrix)

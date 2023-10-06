@@ -3,15 +3,18 @@ from ursina import Shader, AmbientLight, EditorCamera, color, raycast, Vec3
 
 from abstracts.game_object import GameObject
 from materials.prototype import PrototypeDarkMaterial
+from shaders.red.red_shader import RedShader
 from shaders.skybox.skybox_shader import SkyBoxShader
 
-def draw_line(start, end, color=(1,0,0,1)):
+
+def draw_line(start, end, color=(1, 0, 0, 1)):
     lines = LineSegs()
     lines.set_color(color)
     lines.move_to(start)
     lines.draw_to(end)
     node = lines.create()
     return NodePath(node)
+
 
 class Scene(GameObject):
     skybox = None
@@ -52,17 +55,20 @@ class Scene(GameObject):
         )
 
     def setup_skybox(self):
+        instance = RedShader()
+
         self.skybox = GameObject(
             parent=self,
             model="sphere",
-            # texture="textures/skybox/base_skybox",
-            scale=9900,
+            texture="textures/skybox/base_skybox",
+            scale=100,
             position=(5, 1, 5),
             double_sided=True,
-            eternally_moving=True
+            eternally_moving=True,
+            shader=SkyBoxShader().shader
         )
 
-        self.skybox.shader = SkyBoxShader(skybox=self.skybox)
+        # self.skybox.set_shader(instance)
 
     def update_looking_at(self):
         """Atualizar a posição e a direção do raio para coincidir com a câmera."""
@@ -78,7 +84,7 @@ class Scene(GameObject):
             self.looking_at = hit_info.entity
             line.reparent_to(self)
 
-            if(hasattr(self.shader, 'current_object')):
+            if (hasattr(self.shader, 'current_object')):
                 self.shader.current_object = hit_info.entity
 
     def update(self):

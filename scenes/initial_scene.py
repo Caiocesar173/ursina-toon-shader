@@ -10,29 +10,6 @@ from ursina.shaders import normals_shader
 from panda3d.core import Shader as Panda3dShader
 
 class InitialScene(CelScene):
-    vertex = '''
-       #version 140
-        uniform mat4 p3d_ModelViewProjectionMatrix;
-        uniform mat4 p3d_ModelMatrix;
-        in vec4 p3d_Vertex;
-        in vec3 p3d_Normal;
-        out vec3 world_normal;
-
-        void main() {
-            gl_Position = p3d_ModelViewProjectionMatrix * p3d_Vertex;
-        }
-    '''
-
-    fragment = '''
-        #version 330 core
-
-        out vec4 FragColor;
-        void main() {
-            FragColor = vec4(1.0, 0.0, 0.0, 1.0);  // cor vermelha
-        }
-    '''
-
-
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -53,6 +30,5 @@ class InitialScene(CelScene):
         )
 
     def setup_camera(self):
-        self.camera = FirstPersonController()
-        instance = Shader(language=Shader.GLSL, vertex=self.vertex, fragment=self.fragment)
-        self.camera.shader = instance
+        self.camera = EditorCamera()
+        # camera.shader = ToonShader().shader

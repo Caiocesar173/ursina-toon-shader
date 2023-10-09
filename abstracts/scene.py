@@ -3,7 +3,6 @@ from ursina import Shader, AmbientLight, EditorCamera, color, raycast, Vec3
 
 from abstracts.game_object import GameObject
 from materials.prototype import PrototypeDarkMaterial
-from shaders.red.red_shader import RedShader
 from shaders.skybox.skybox_shader import SkyBoxShader
 
 
@@ -55,15 +54,13 @@ class Scene(GameObject):
         )
 
     def setup_skybox(self):
-        instance = RedShader()
-
         self.skybox = GameObject(
             parent=self,
-            model="sphere",
+            model="sky_dome",
             scale=100,
             position=(5, 1, 5),
-            double_sided=True,
-            eternally_moving=True,
+            # double_sided=True,
+            # eternally_moving=True,
             shader=SkyBoxShader().shader
         )
 

@@ -1,6 +1,6 @@
 from ursina import PointLight, color
 
-from prefabs.sun import SunLight
+from prefabs.sun_light import SunLight
 from shaders.cel.cel_shader import CelShader
 from abstracts.scene import Scene, GameObject
 from materials.prototype import PrototypeOrangeMaterial
@@ -62,4 +62,10 @@ class CelScene(Scene):
         self.point_light3.intensity = 0.5 * self.sun.intensity_factor
         self.point_light4.intensity = 0.5 * self.sun.intensity_factor
 
-        self.skybox.set_shader_input('sunPosition', self.sun.position)
+        # Normalizar a posição do sol para que esteja na faixa [-1, 1]
+        normalized_sun_position = [i / 50 for i in self.sun.position]
+        self.skybox.set_shader_input('sunPosition', normalized_sun_position)
+
+        # A lua estará no lado oposto do sol
+        moonPosition = (-normalized_sun_position[0], -normalized_sun_position[1], -normalized_sun_position[2])
+        self.skybox.set_shader_input('moonPosition', moonPosition)

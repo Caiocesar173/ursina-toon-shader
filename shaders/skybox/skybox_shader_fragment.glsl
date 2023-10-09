@@ -4,21 +4,31 @@ in vec3 TexCoords;
 out vec4 FragColor;
 
 uniform vec3 sunPosition;
+uniform vec3 moonPosition;
 
-const float sunRadius = 0.005; // raio do sol no céu
+const float sunRadius = 0.2;
+const float moonRadius = 0.2;
+
+// Definição de cores
+vec3 sunriseColor = vec3(0.8, 0.6, 0.5);
+vec3 dayColor = vec3(0.5, 0.8, 0.9);
+vec3 sunsetColor = vec3(0.9, 0.5, 0.4);
+vec3 nightColor = vec3(0.2, 0.3, 0.5);
+
+vec3 sunCoreColor = vec3(0.95, 0.72, 0.04);
+vec3 sunHaloColor = vec3(1.0, 0.8, 0.5);
+
+vec3 moonCoreColor = vec3(0.8, 0.8, 1.0);
+vec3 moonHaloColor = vec3(0.9, 0.9, 1.0);
 
 void main()
 {
-    // Definição de cores
-    vec3 sunriseColor = vec3(0.8, 0.6, 0.5);
-    vec3 dayColor = vec3(0.5, 0.8, 0.9);
-    vec3 sunsetColor = vec3(0.9, 0.5, 0.4);
-    vec3 nightColor = vec3(0.2, 0.3, 0.5);
-    vec3 sunCoreColor = vec3(0.95, 0.72, 0.04);
-    vec3 sunHaloColor = vec3(1.0, 0.8, 0.5);
-
     float luminance = sunPosition.y;
     vec3 skyColor;
+    vec3 finalColor;
+
+    float distanceToSun = length(TexCoords - sunPosition);
+    float distanceToMoon = length(TexCoords - moonPosition);
 
     // Lógica de mistura com base na luminância
     if(luminance > 0.5)
@@ -30,13 +40,21 @@ void main()
     else
         skyColor = mix(nightColor, sunsetColor, (luminance + 1.0));
 
-    float distanceToSun = length(TexCoords - sunPosition);
 
-    vec3 finalColor;
-    if (distanceToSun < sunRadius) {
-        finalColor = mix(sunHaloColor, sunCoreColor, (sunRadius - distanceToSun) / sunRadius);
+    // É dia, então renderiza o Sol
+    if (luminance > 0) {
+        if (distanceToSun < sunRadius) {
+            finalColor = mix(sunHaloColor, sunCoreColor, (sunRadius - distanceToSun) / sunRadius);
+        } else {
+            finalColor = skyColor;
+        }
+    // É noite, então renderiza a Lua
     } else {
-        finalColor = skyColor;
+        if (distanceToMoon < moonRadius) {
+            finalColor = mix(moonHaloColor, moonCoreColor, (moonRadius - distanceToMoon) / moonRadius);
+        } else {
+            finalColor = skyColor;
+        }
     }
 
     FragColor = vec4(finalColor, 1.0);
